@@ -225,18 +225,24 @@ public class UserListFragment extends Fragment implements
     private void addMapMarkers(){
         if(mGoogleMap != null){
             for(UserLocation userLocation: mUserLocations){
-                MarkerOptions markerOptions = new MarkerOptions().position(
-                        new LatLng(userLocation.getGeo_point().getLatitude(), userLocation.getGeo_point().getLongitude())
-                ).title(userLocation.getUser().getUsername());
-                mGoogleMap.addMarker(markerOptions);
 
-                // set the current users location to global variable
-                if(FirebaseAuth.getInstance().getUid().equals(userLocation.getUser().getUser_id())){
-                    mUserPosition = new com.google.maps.model.LatLng(
-                            userLocation.getGeo_point().getLatitude(),
-                            userLocation.getGeo_point().getLongitude()
-                    );
+                try{
+                    MarkerOptions markerOptions = new MarkerOptions().position(
+                            new LatLng(userLocation.getGeo_point().getLatitude(), userLocation.getGeo_point().getLongitude())
+                    ).title(userLocation.getUser().getUsername());
+                    mGoogleMap.addMarker(markerOptions);
+
+                    // set the current users location to global variable
+                    if(FirebaseAuth.getInstance().getUid().equals(userLocation.getUser().getUser_id())){
+                        mUserPosition = new com.google.maps.model.LatLng(
+                                userLocation.getGeo_point().getLatitude(),
+                                userLocation.getGeo_point().getLongitude()
+                        );
+                    }
+                }catch (NullPointerException e){
+                    Log.e(TAG, "addMapMarkers: NullPointerException: " + e.getMessage() );
                 }
+
             }
             setCameraView();
             mGoogleMap.setOnMarkerClickListener(this);
@@ -250,34 +256,39 @@ public class UserListFragment extends Fragment implements
     private void setCameraView(){
 
         // Set a random boundary to start
-        double bottomBoundary = mUserLocations.get(0).getGeo_point().getLatitude() - 0.1;
-        double leftBoundary = mUserLocations.get(0).getGeo_point().getLongitude() - 0.1;
-        double topBoundary = mUserLocations.get(0).getGeo_point().getLatitude() + 0.1;
-        double rightBoundary = mUserLocations.get(0).getGeo_point().getLongitude() + 0.1;
+        double bottomBoundary = -90;
+        double leftBoundary = -180;
+        double topBoundary = 90;
+        double rightBoundary = 180;
 
         for(UserLocation userLocation: mUserLocations){
 
-            // Bottom Boundary
-            if(userLocation.getGeo_point().getLatitude() < bottomBoundary){
-                bottomBoundary = userLocation.getGeo_point().getLatitude();
+            try{
+                // Bottom Boundary
+                if(userLocation.getGeo_point().getLatitude() < bottomBoundary){
+                    bottomBoundary = userLocation.getGeo_point().getLatitude();
+                }
+
+                // Left Boundary
+                if(userLocation.getGeo_point().getLongitude() < leftBoundary){
+                    leftBoundary = userLocation.getGeo_point().getLongitude();
+                }
+
+                // Top Boundary
+                if(userLocation.getGeo_point().getLatitude() > topBoundary){
+                    topBoundary = userLocation.getGeo_point().getLatitude();
+                }
+
+                // Right Boundary
+                if(userLocation.getGeo_point().getLongitude() > rightBoundary){
+                    rightBoundary = userLocation.getGeo_point().getLongitude();
+                }
+
+            }catch (NullPointerException e){
+                Log.e(TAG, "addMapMarkers: NullPointerException: " + e.getMessage() );
             }
 
-            // Left Boundary
-            if(userLocation.getGeo_point().getLongitude() < leftBoundary){
-                leftBoundary = userLocation.getGeo_point().getLongitude();
-            }
-
-            // Top Boundary
-            if(userLocation.getGeo_point().getLatitude() > topBoundary){
-                topBoundary = userLocation.getGeo_point().getLatitude();
-            }
-
-            // Right Boundary
-            if(userLocation.getGeo_point().getLongitude() > rightBoundary){
-                rightBoundary = userLocation.getGeo_point().getLongitude();
-            }
         }
-
         mMapBoundary = new LatLngBounds(
                 new LatLng(bottomBoundary,leftBoundary),
                 new LatLng(topBoundary, rightBoundary)

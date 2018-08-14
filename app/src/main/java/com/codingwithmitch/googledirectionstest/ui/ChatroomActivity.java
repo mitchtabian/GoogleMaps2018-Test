@@ -125,7 +125,10 @@ public class ChatroomActivity extends AppCompatActivity implements
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
 
                 if(task.isSuccessful()){
-                    mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                    if(task.getResult().toObject(UserLocation.class) != null){
+
+                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                    }
                 }
             }
         });
