@@ -29,6 +29,7 @@ import android.widget.RelativeLayout;
 import com.codingwithmitch.googledirectionstest.ICallback;
 import com.codingwithmitch.googledirectionstest.R;
 import com.codingwithmitch.googledirectionstest.adapters.UserRecyclerAdapter;
+import com.codingwithmitch.googledirectionstest.models.PolylineData;
 import com.codingwithmitch.googledirectionstest.models.User;
 import com.codingwithmitch.googledirectionstest.models.UserLocation;
 import com.codingwithmitch.googledirectionstest.util.ViewWeightAnimationWrapper;
@@ -38,6 +39,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -108,7 +110,7 @@ public class UserListFragment extends Fragment implements
     private int mMapLayoutState = 0;
     private com.google.maps.model.LatLng mUserPosition ;
     private GeoApiContext mGeoApiContext;
-    private ArrayList<Polyline> mPolyLines = new ArrayList<>();
+    private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
 
 
 
@@ -465,7 +467,7 @@ public class UserListFragment extends Fragment implements
                     Polyline polyline = mGoogleMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
                     polyline.setColor(ContextCompat.getColor(getActivity(), R.color.darkGrey));
                     polyline.setClickable(true);
-                    mPolyLines.add(polyline);
+                    mPolyLinesData.add(new PolylineData(polyline, route.legs[0]));
                 }
             }
         });
@@ -473,14 +475,32 @@ public class UserListFragment extends Fragment implements
 
     @Override
     public void onPolylineClick(Polyline polyline) {
-        for(Polyline line: mPolyLines){
-            if(polyline.getId().equals(line.getId())){
-                line.setColor(ContextCompat.getColor(getActivity(), R.color.blue1));
-                line.setZIndex(1);
+
+        int index = 0;
+        for(PolylineData polylineData: mPolyLinesData){
+            index++;
+            if(polyline.getId().equals(polylineData.getPolyline().getId())){
+                polylineData.getPolyline().setColor(ContextCompat.getColor(getActivity(), R.color.blue1));
+                polylineData.getPolyline().setZIndex(1);
+                Log.d(TAG, "onPolylineClick: data: " + polylineData.getLeg().endLocation);
+
+                LatLng endLocation = new LatLng(
+                        polylineData.getLeg().endLocation.lat,
+                        polylineData.getLeg().endLocation.lng
+                );
+
+                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
+                        .position(endLocation)
+                        .title("Trip #" + index)
+                        .snippet("Duration: " + polylineData.getLeg().duration
+                                + "\n" + "Distance: " + polylineData.getLeg().distance
+                        ));
+
+                marker.showInfoWindow();
             }
             else{
-                line.setColor(ContextCompat.getColor(getActivity(), R.color.darkGrey));
-                line.setZIndex(0);
+                polylineData.getPolyline().setColor(ContextCompat.getColor(getActivity(), R.color.darkGrey));
+                polylineData.getPolyline().setZIndex(0);
             }
         }
 
