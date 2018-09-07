@@ -328,7 +328,6 @@ public class UserListFragment extends Fragment implements
                 }
 
             }
-            mClusterManager.setAlgorithm(new NonHierarchicalDistanceBasedAlgorithm<ClusterMarker>());
             mClusterManager.cluster();
 
             setCameraView();

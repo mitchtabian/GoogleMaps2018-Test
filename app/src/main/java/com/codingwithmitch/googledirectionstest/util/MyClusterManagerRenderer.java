@@ -102,7 +102,7 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
 
     @Override
     protected boolean shouldRenderAsCluster(Cluster cluster) {
-        return cluster.getSize() > 4;
+        return false;
     }
 }
 
