@@ -23,6 +23,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
+    implementation 'com.android.support:support-v4:27.1.1'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
@@ -47,7 +48,22 @@ dependencies {
     //Google Play Services for Maps
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
 
+    // Maps utils (required for custom markers)
+    implementation 'com.google.maps.android:android-maps-utils:0.5+'
+
     // Google play services for location information
     implementation 'com.google.android.gms:play-services-location:15.0.1'
+
+    // Google Maps Services (needed for directions)
+    implementation 'com.google.maps:google-maps-services:0.2.9'
+    implementation 'org.slf4j:slf4j-nop:1.7.25'
+
+    // glide
+    implementation 'com.github.bumptech.glide:glide:4.8.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+
+    // Circle ImageView
+    implementation 'de.hdodenhof:circleimageview:2.2.0'
+
 }
 apply plugin: 'com.google.gms.google-services'

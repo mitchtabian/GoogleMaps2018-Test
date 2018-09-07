@@ -3,6 +3,7 @@ package com.codingwithmitch.googledirectionstest;
 import android.app.Application;
 
 import com.codingwithmitch.googledirectionstest.models.User;
+import com.codingwithmitch.googledirectionstest.services.LocationService;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class UserClient extends Application {

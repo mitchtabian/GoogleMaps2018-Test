@@ -23,7 +23,6 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 
 import static android.text.TextUtils.isEmpty;
 import static com.codingwithmitch.googledirectionstest.util.Check.doStringsMatch;
@@ -81,11 +80,6 @@ public class RegisterActivity extends AppCompatActivity implements
                             user.setEmail(email);
                             user.setUsername(email.substring(0, email.indexOf("@")));
                             user.setUser_id(FirebaseAuth.getInstance().getUid());
-
-                            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                                    .setTimestampsInSnapshotsEnabled(true)
-                                    .build();
-                            mDb.setFirestoreSettings(settings);
 
                             DocumentReference newUserRef = mDb
                                     .collection(getString(R.string.collection_users))

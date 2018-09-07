@@ -1,19 +1,28 @@
 package com.codingwithmitch.googledirectionstest.ui;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
+import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -33,10 +42,16 @@ import com.codingwithmitch.googledirectionstest.adapters.ChatroomRecyclerAdapter
 import com.codingwithmitch.googledirectionstest.models.Chatroom;
 import com.codingwithmitch.googledirectionstest.models.UserLocation;
 import com.codingwithmitch.googledirectionstest.models.User;
+import com.codingwithmitch.googledirectionstest.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,13 +61,14 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -66,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements
         ChatroomRecyclerAdapter.ChatroomRecyclerClickListener {
 
     private static final String TAG = "MainActivity";
+    private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
+    private final static long FASTEST_INTERVAL = 2000; /* 2 sec */
 
     //widgets
     private ProgressBar mProgressBar;
@@ -79,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements
     private FirebaseFirestore mDb;
     private boolean mLocationPermissionGranted = false;
     private FusedLocationProviderClient mFusedLocationClient;
+    private LocationRequest mLocationRequest;
 
 
     @Override
@@ -184,8 +203,8 @@ public class MainActivity extends AppCompatActivity implements
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
             getLastKnownLocation();
+//            startLocationService();
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
@@ -203,15 +222,16 @@ public class MainActivity extends AppCompatActivity implements
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mLocationPermissionGranted = true;
-
                     getLastKnownLocation();
+//                    startLocationService();
                 }
             }
         }
     }
 
+
     private void getLastKnownLocation() {
+        Log.d(TAG, "getLastKnownLocation: called.");
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -220,15 +240,90 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onComplete(@NonNull Task<android.location.Location> task) {
                 if (task.isSuccessful()) {
-
+                    mLocationPermissionGranted = true;
                     Location location = task.getResult();
                     User user = ((UserClient)(getApplicationContext())).getUser();
                     GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
                     UserLocation userLocation = new UserLocation(user, geoPoint, null);
                     saveUserLocation(userLocation);
+                    startLocationService();
                 }
             }
         });
+
+
+
+        // ---------------------------------- LocationRequest for Activity ------------------------------------
+        // Create the location request to start receiving updates
+//        mLocationRequest = new LocationRequest();
+////        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+//        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+////        mLocationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+////        mLocationRequest.setPriority(LocationRequest.PRIORITY_NO_POWER);
+//        mLocationRequest.setInterval(UPDATE_INTERVAL);
+//        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+//
+//        // Create LocationSettingsRequest object using location request
+//        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+//        builder.addLocationRequest(mLocationRequest);
+//        LocationSettingsRequest locationSettingsRequest = builder.build();
+//
+//        // Check whether location settings are satisfied
+//        // https://developers.google.com/android/reference/com/google/android/gms/location/SettingsClient
+//        SettingsClient settingsClient = LocationServices.getSettingsClient(this);
+//        settingsClient.checkLocationSettings(locationSettingsRequest);
+//
+//        // new Google API SDK v11 uses getFusedLocationProviderClient(this)
+//        mFusedLocationClient.requestLocationUpdates(mLocationRequest, new LocationCallback() {
+//                    @Override
+//                    public void onLocationResult(LocationResult locationResult) {
+//
+//                        mLocationPermissionGranted = true;
+//                        Location location = locationResult.getLastLocation();
+//
+//                        if(location != null){
+//                            User user = ((UserClient)(getApplicationContext())).getUser();
+//                            GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+//                            UserLocation userLocation = new UserLocation(user, geoPoint, null);
+//                            saveUserLocation(userLocation);
+//
+//                            Toast.makeText(getApplicationContext(), "current location:\n"
+//                                            + "latitude: " + locationResult.getLastLocation().getLatitude() + "\n"
+//                                            + "longitude: " + locationResult.getLastLocation().getLongitude(),
+//                                    Toast.LENGTH_SHORT).show();
+//                        }
+//
+//                    }
+//                },
+//                Looper.myLooper());
+
+
+    }
+
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            Intent serviceIntent = new Intent(this, LocationService.class);
+//        this.startService(serviceIntent);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+
+                MainActivity.this.startForegroundService(serviceIntent);
+            }else{
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    private boolean isLocationServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.codingwithmitch.googledirectionstest.services.LocationService".equals(service.service.getClassName())) {
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
     }
 
     private void saveUserLocation(final UserLocation userLocation){
@@ -284,11 +379,6 @@ public class MainActivity extends AppCompatActivity implements
 
     private void getChatrooms(){
 
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
-
         CollectionReference chatroomsCollection = mDb
                 .collection(getString(R.string.collection_chatrooms));
 
@@ -323,11 +413,6 @@ public class MainActivity extends AppCompatActivity implements
 
         final Chatroom chatroom = new Chatroom();
         chatroom.setTitle(chatroomName);
-
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
 
         DocumentReference newChatroomRef = mDb
                 .collection(getString(R.string.collection_chatrooms))
@@ -413,7 +498,10 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void signOut(){
-        FirebaseAuth.getInstance().signOut();
+        FirebaseAuth.getInstance().signOut(); // Sign out Firebase
+
+        ((UserClient)getApplicationContext()).setUser(null); // Reset UserClient instance
+
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -432,6 +520,10 @@ public class MainActivity extends AppCompatActivity implements
         switch(item.getItemId()){
             case R.id.action_sign_out:{
                 signOut();
+                return true;
+            }
+            case R.id.action_profile:{
+                startActivity(new Intent(this, ProfileActivity.class));
                 return true;
             }
             default:{
