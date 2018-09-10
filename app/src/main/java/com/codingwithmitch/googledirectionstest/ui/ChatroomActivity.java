@@ -241,21 +241,6 @@ public class ChatroomActivity extends AppCompatActivity implements
     }
 
     private void inflateUserListFragment(){
-//        if(mUserListFragment == null){
-//            mUserListFragment = UserListFragment.newInstance();
-//        }
-
-//        Bundle bundle = new Bundle();
-//        bundle.putParcelableArrayList(getString(R.string.intent_user_list), mUserList);
-//        bundle.putParcelableArrayList(getString(R.string.intent_user_locations), mUserLocations);
-//        mUserListFragment.setArguments(bundle);
-//
-//        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//        transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
-//        transaction.replace(R.id.user_list_container, mUserListFragment, getString(R.string.fragment_user_list));
-//        transaction.addToBackStack(getString(R.string.fragment_user_list));
-//        transaction.commit();
-
         UserListFragment fragment = UserListFragment.newInstance();
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList(getString(R.string.intent_user_list), mUserList);
@@ -263,7 +248,6 @@ public class ChatroomActivity extends AppCompatActivity implements
         fragment.setArguments(bundle);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
         transaction.replace(R.id.user_list_container, fragment, getString(R.string.fragment_user_list));
         transaction.addToBackStack(getString(R.string.fragment_user_list));
         transaction.commit();

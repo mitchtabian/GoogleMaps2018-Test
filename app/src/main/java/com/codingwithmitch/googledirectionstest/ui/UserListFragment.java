@@ -125,7 +125,6 @@ public class UserListFragment extends Fragment implements
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
-    private Boolean isUpdatingLocation = false;
     private ClusterManager<ClusterMarker> mClusterManager;
     private MyClusterManagerRenderer mClusterManagerRenderer;
 
@@ -202,12 +201,12 @@ public class UserListFragment extends Fragment implements
     }
 
     private void startUserLocationsRunnable(){
+        Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
         mHandler.postDelayed(mRunnable = new Runnable() {
             @Override
             public void run() {
                 // If a trip has NOT been calculated, continue updating locations
                 Log.d(TAG, "run: polylinesdata size: " + mPolyLinesData.size());
-                isUpdatingLocation = true;
                 if(mPolyLinesData.size() == 0){
                     retrieveUserLocations();
                     mHandler.postDelayed(mRunnable, LOCATION_UPDATE_INTERVAL);
@@ -270,6 +269,8 @@ public class UserListFragment extends Fragment implements
 
 
     private void addMapMarkers(){
+        showProgressBar();
+
         if(mGoogleMap != null){
 
             resetMap();
@@ -331,6 +332,7 @@ public class UserListFragment extends Fragment implements
             mClusterManager.cluster();
 
             setCameraView();
+            hideProgressBar();
         }
     }
 
@@ -671,17 +673,14 @@ public class UserListFragment extends Fragment implements
 
     private void stopLocationUpdates(){
         mHandler.removeCallbacks(mRunnable);
-        isUpdatingLocation = false;
     }
 
     @Override
     public void onResume() {
         Log.d(TAG, "LifeCycle Event: onResume: called.");
         mMapView.onResume();
+        startUserLocationsRunnable(); // update user locations every 'LOCATION_UPDATE_INTERVAL'
         super.onResume();
-        if(isUpdatingLocation){
-            startUserLocationsRunnable(); // update user locations every 'LOCATION_UPDATE_INTERVAL'
-        }
     }
 
     @Override
@@ -702,6 +701,7 @@ public class UserListFragment extends Fragment implements
     public void onMapReady(GoogleMap map) {
         Log.d(TAG, "LifeCycle Event: onMapReady: called.");
         mGoogleMap = map;
+//        initialMapAnimation();
         addMapMarkers();
 //        mGoogleMap.setTrafficEnabled(true);
         mGoogleMap.setOnPolylineClickListener(this);
@@ -754,19 +754,27 @@ public class UserListFragment extends Fragment implements
         });
     }
 
+    private void initialMapAnimation(){
+        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
+        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
+                "weight",
+                0,
+                50);
+        mapAnimation.setDuration(800);
+    }
 
     private void expandMapAnimation(){
         ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
         ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
                 "weight",
-                mapAnimationWrapper.getWeight(),
+                50,
                 100);
         mapAnimation.setDuration(800);
 
         ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
         ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
                 "weight",
-                mapAnimationWrapper.getWeight(),
+                50,
                 0);
         recyclerAnimation.setDuration(800);
 
@@ -778,14 +786,14 @@ public class UserListFragment extends Fragment implements
         ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
         ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
                 "weight",
-                mapAnimationWrapper.getWeight(),
+                100,
                 50);
         mapAnimation.setDuration(800);
 
         ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
         ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
                 "weight",
-                mapAnimationWrapper.getWeight(),
+                0,
                 50);
         recyclerAnimation.setDuration(800);
 

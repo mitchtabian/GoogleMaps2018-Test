@@ -28,6 +28,7 @@ public class Topics {
             // https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
             // https://stackoverflow.com/questions/32158927/android-google-map-icongenerator-making-a-transparent-marker-icon
     // Stopping the Location service when user has signed out (checking for null pointer in "saveUserLocation" method in service
+    // Make sure to talk about the UserClient thing
 
 
 

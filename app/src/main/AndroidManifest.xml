@@ -41,8 +41,7 @@
             android:stopWithTask="true" />
 
         <activity
-            android:name=".ui.ProfileActivity"
-            android:label="@string/title_activity_profile">
+            android:name=".ui.ProfileActivity">
 
         </activity>
     </application>
